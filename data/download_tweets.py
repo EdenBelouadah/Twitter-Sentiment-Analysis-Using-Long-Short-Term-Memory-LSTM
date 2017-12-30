@@ -11,7 +11,7 @@ import socket
 socket.setdefaulttimeout(10)
 
 cache = {}
-
+cpt=0
 for line in open(sys.argv[1]):
 	fields = line.rstrip('\n').split('\t')
 	sid = fields[0]
@@ -57,4 +57,6 @@ for line in open(sys.argv[1]):
         text = text.replace('\n', ' ',)
         text = re.sub(r'\s+', ' ', text)
         #print json.dumps(tweet, indent=2)
+	cpt+=1
+	sys.stderr.write(str(cpt)+"\n")
         print "\t".join(fields + [text]).encode('utf-8')
