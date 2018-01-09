@@ -65,7 +65,23 @@ def clean_tag(token):
 
 def clean_hashtag(token):
     if token.startswith("#"):
-        token=token[1:]
+        hashtag = token[1:]
+        #print("hashtag = "+ hashtag)
+        hashtag_parts = []
+        part = ""
+        for c in hashtag:
+            if(c.islower()):
+                part += c
+            else: #upper
+                if(part != ""):
+                    hashtag_parts.append(part)
+                    part = ""+c
+                else:
+                    part = ""+c
+        if (part != ""):
+            hashtag_parts.append(part)
+        #print("hashtag parts = "+ str(hashtag_parts))
+
     return token
 
 
@@ -77,7 +93,7 @@ def process_messages(raw_messages):  # For raw messages, each message is str
         nltk.download('stopwords')
         stop_words = set(stopwords.words())
     assert isinstance(raw_messages, list) and all(isinstance(msg, str) for msg in raw_messages)  # Type check
-    tokenizer = nltk.tokenize.TweetTokenizer(preserve_case=False, strip_handles=True, reduce_len=True)
+    tokenizer = nltk.tokenize.TweetTokenizer(preserve_case=True, strip_handles=True, reduce_len=True)
     tokened_messages = [tokenizer.tokenize(msg) for msg in raw_messages]
     clean_tokens = [[token for token in tokens if token not in stop_words and clean_url(token) and clean_digit(token) and clean_punc(token) and clean_tag(token)] for tokens in tokened_messages]
     no_hashtag_tokens = [[clean_hashtag(token) for token in tokens] for tokens in clean_tokens]
@@ -109,7 +125,8 @@ def transform_to_indices(processed_messages, words_indices):
 
 
 def create_vocabulary_embeddings(vocabulary, p_messages):
-    embedding_size = 50
+    p_messages.append(["<<<<<<OOV>>>>>>>"])
+    embedding_size = 100
     model = gensim.models.Word2Vec(p_messages, min_count = 1, size = embedding_size)
     i=0
     vocabulary_embeddings = []
@@ -118,7 +135,8 @@ def create_vocabulary_embeddings(vocabulary, p_messages):
         try:
             embedding = model[word]
         except:
-            embedding =  [0.05] * embedding_size
+            embedding =  ["<<<<<<OOV>>>>>>>"]
+            print("yes")
         vocabulary_embeddings.append(embedding)
         embeddings_indices[word] = i
         i += 1

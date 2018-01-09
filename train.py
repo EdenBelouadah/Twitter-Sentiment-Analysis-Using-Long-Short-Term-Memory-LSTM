@@ -11,7 +11,7 @@ from data import load_B_task_dataset, process_messages, generate_vocabulary, tra
 messages, polarities = load_B_task_dataset(sys.argv[1])
 p_messages = process_messages(messages)
 vocab = generate_vocabulary(p_messages)
-vocab.add("<unk>")
+vocab.add("<<<<<<OOV>>>>>>>")
 
 vocabulary_embeddings,  embeddings_indices = create_vocabulary_embeddings(vocab, p_messages)
 
@@ -30,7 +30,7 @@ messages_var = ag.Variable(th.LongTensor(messages_np))
 lstm = nn.LSTM(input_size=vocabulary_embeddings.shape[1], hidden_size=15, num_layers=1, batch_first=True)
 linear = nn.Linear(15, 3)
 model = nn.Sequential(lstm, linear)
-optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=1)
+optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.7)
 criterion = nn.CrossEntropyLoss()
 
 y = ag.Variable(th.LongTensor(polarities))
