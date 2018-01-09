@@ -3,6 +3,7 @@ import csv
 import nltk
 import numpy as np
 import re
+import gensim
 
 
 def load_B_task_dataset(file_path):
@@ -20,10 +21,12 @@ def load_B_task_dataset(file_path):
                 polarities.append(1)
     return messages, polarities
 
+
 def clean_digit(token):
     if re.search(r'.*\d.*', token): #whatever_digit_whatever
         return False
     return True
+
 
 def clean_url(token):
     if re.search(r'\w+\.\w+', token): #word.word
@@ -31,6 +34,7 @@ def clean_url(token):
     if not (token.startswith("http") or token.startswith("www")):
         return True
     return False
+
 
 def clean_punc(token):
     punc = [".", ";", "!", ":", "(", ")", "[", "]", "?", ",", "&", "-", "$", "~", "#", "{", "}", "/", "\\", '\'', '\"', '<', '>', '`', "+", "|", "^","@","%","=","*"]
@@ -52,15 +56,18 @@ def clean_punc(token):
         return False
     return True
 
+
 def clean_tag(token):
     if re.search(r'@\w+', token): #@person , Emails
         return False
     return True
 
+
 def clean_hashtag(token):
     if token.startswith("#"):
         token=token[1:]
     return token
+
 
 def process_messages(raw_messages):  # For raw messages, each message is str
     from nltk.corpus import stopwords
@@ -78,7 +85,7 @@ def process_messages(raw_messages):  # For raw messages, each message is str
 
 
 def generate_vocabulary(processed_messages):  # For processed messages, each message is list of tokens
-    assert isinstance(messages, list) and all(isinstance(msg, list) for msg in processed_messages)  # Type check
+    assert isinstance(processed_messages, list) and all(isinstance(msg, list) for msg in processed_messages)  # Type check
     vocabulary = set()
     for message in processed_messages:
         vocabulary.update(message)
@@ -101,16 +108,26 @@ def transform_to_indices(processed_messages, words_indices):
     return [[words_indices[w] for w in msg] for msg in processed_messages]
 
 
+def create_vocabulary_embeddings(vocabulary, p_messages):
+    embedding_size = 50
+    model = gensim.models.Word2Vec(p_messages, min_count = 1, size = embedding_size)
+    i=0
+    vocabulary_embeddings = []
+    embeddings_indices = {}
+    for word in vocabulary:
+        try:
+            embedding = model[word]
+        except:
+            embedding =  [0.05] * embedding_size
+        vocabulary_embeddings.append(embedding)
+        embeddings_indices[word] = i
+        i += 1
+    vocabulary_embeddings = np.array(vocabulary_embeddings)
+    return vocabulary_embeddings, embeddings_indices
+
+
 if __name__ == '__main__':  # Just a testing code
     import sys
     messages, polarities = load_B_task_dataset(sys.argv[1])
     p_messages = process_messages(messages)
-    vocab = generate_vocabulary(p_messages)
-    vocab_indices = get_indices(vocab)
-    # for msg, msg_idx in zip(p_messages, transform_to_indices(p_messages, vocab_indices)):
-        # print(msg)
-        #print(msg_idx)
 
-    # for v in vocab:
-    #     print(v)
-    print("taille vocabulaire = "+str(len(vocab)))
