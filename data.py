@@ -63,10 +63,17 @@ def clean_tag(token):
     return True
 
 
-def clean_hashtag(token):
+# def clean_hashtag(token):
+#     if token.startswith("#"):
+#         token=token[1:]
+#     return token
+
+
+def get_hashtag_parts(token):
     if token.startswith("#"):
         hashtag = token[1:]
-        #print("hashtag = "+ hashtag)
+        if hashtag.isupper():
+            return [hashtag]
         hashtag_parts = []
         part = ""
         for c in hashtag:
@@ -75,14 +82,11 @@ def clean_hashtag(token):
             else: #upper
                 if(part != ""):
                     hashtag_parts.append(part)
-                    part = ""+c
-                else:
-                    part = ""+c
+                part = ""+c
         if (part != ""):
             hashtag_parts.append(part)
-        #print("hashtag parts = "+ str(hashtag_parts))
-
-    return token
+        return hashtag_parts
+    return [token]
 
 
 def process_messages(raw_messages):  # For raw messages, each message is str
@@ -95,9 +99,18 @@ def process_messages(raw_messages):  # For raw messages, each message is str
     assert isinstance(raw_messages, list) and all(isinstance(msg, str) for msg in raw_messages)  # Type check
     tokenizer = nltk.tokenize.TweetTokenizer(preserve_case=True, strip_handles=True, reduce_len=True)
     tokened_messages = [tokenizer.tokenize(msg) for msg in raw_messages]
+    clean_hashtag_messages = []
+    for msg in tokened_messages:
+        clean_msg = []
+        for token in msg:
+            hashtag_parts = get_hashtag_parts(token)
+            for part in hashtag_parts:
+                clean_msg.append(part.lower())
+        clean_hashtag_messages.append(clean_msg)
+
+    assert(len(tokened_messages) == len(clean_hashtag_messages))
     clean_tokens = [[token for token in tokens if token not in stop_words and clean_url(token) and clean_digit(token) and clean_punc(token) and clean_tag(token)] for tokens in tokened_messages]
-    no_hashtag_tokens = [[clean_hashtag(token) for token in tokens] for tokens in clean_tokens]
-    return no_hashtag_tokens
+    return clean_tokens
 
 
 def generate_vocabulary(processed_messages):  # For processed messages, each message is list of tokens
@@ -125,9 +138,12 @@ def transform_to_indices(processed_messages, words_indices):
 
 
 def create_vocabulary_embeddings(vocabulary, p_messages):
-    p_messages.append(["<<<<<<OOV>>>>>>>"])
     embedding_size = 100
-    model = gensim.models.Word2Vec(p_messages, min_count = 1, size = embedding_size)
+    oov = "<<<<<<<OOV>>>>>>>"
+    vocabulary.add(oov)
+    messages = [msg for msg in p_messages]
+    messages.append([oov])
+    model = gensim.models.Word2Vec(messages, min_count = 1, size = embedding_size)
     i=0
     vocabulary_embeddings = []
     embeddings_indices = {}
@@ -135,8 +151,7 @@ def create_vocabulary_embeddings(vocabulary, p_messages):
         try:
             embedding = model[word]
         except:
-            embedding =  ["<<<<<<OOV>>>>>>>"]
-            print("yes")
+            embedding = model[oov]
         vocabulary_embeddings.append(embedding)
         embeddings_indices[word] = i
         i += 1
@@ -148,4 +163,3 @@ if __name__ == '__main__':  # Just a testing code
     import sys
     messages, polarities = load_B_task_dataset(sys.argv[1])
     p_messages = process_messages(messages)
-
