@@ -173,7 +173,7 @@ Since we cannot use the "dirty" raw text tweets for classification, we did some 
 \begin{itemize}
 	\item Tokening messages using \emph{NLTK Tweet Tokenizer} which is more appropriate for this type of messages,
 	\item Using regular expressions to remove digits (24, 12.400\$...), punctuations (?,:,;,",\#, @...), tags (@user) and every sequence of special characters. Howerver, the emoticons are kept,
-	\item Using $NLTK Stop words$ to remove all useless words,
+	\item Using \emph{NLTK Stop words} to remove all useless words,
 	\item Preprocessing Hashtags: removing \# and separating the hashtag parts (\#VeryHappy -> Very + Happy)
 	\item Transform all messages to lower case. 
 \end{itemize}
@@ -241,9 +241,30 @@ The program shows real time plots for accuracy and the Cross Entropy Loss.
 Unfortunately, The maximum of accuracy that our model reached is 52\%. We think about changing again the architecture of the model, probably change the data preprocessing and why not add dropout techniques.
 
 \subsection{Multi-Layer Perceptron (MLP)}
+We also wanted to test the performance of the MLP classifier if we train it on a word embedding-based representation of our tweets. 
+
+For that we used the Word2Vec embeddings for our Vocabulary and represented each tweet by the sum of the embeddings of its constituents. That is, if a tweet is "Happy New Year", the value of this observation would be the some of the embeddings of "Happy", "New" and "Year". And we do this for all the elements in the training set. Thus, using an embedding dimension of 100, the shape of our training set now becomes (5916, 100).
+
+We then train the MLP classifier with one hidden layer of size 100 neurons, using stratified 10-fold cross-validation. We obtain the following results: 
+
+
+\begin{table}[H]\centering
+	\begin{tabular}{ccccccccccc}
+		\toprule
+		\textbf{Fold} & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 \\    \midrule
+		\textbf{Accuracy} & 0.513 & 0.540 & 0.513 & 0.522 & 0.5 & 0.530 & 0.521 & 0.496 & 0.487 & 0.493  \\   
+		\bottomrule	
+	\end{tabular}
+	\caption{Accuracy obtained for each fold}
+\end{table}
+
+The mean accuracy is 0.51. 
+
+As we can see, the MLP performance is slightly better than a random classifier which would give us an accuracy of 33\%. However, we can still optimize the model and/or the data representation. Deeper thoughts would be developped in our final report. 
+
 
 
 \section{Conclusion}
-In this intermediate report we showed data preprocessing and our baseline results. We are aiming to make the models give a higher accuracy and a lower prediction error. We hope that the final report will be more convincing.  
+In this intermediate report we showed data preprocessing and our baseline results. In addition to making the models give a higher accuracy and a lower prediction error, we aim at analysing the behaviour of each of the models tested for the different representations of the training data to come up with an insight regarding the specificities of this particular classification task. 
 
 \end{document}
