@@ -208,7 +208,18 @@ In figure \ref{freq}, we show the distribution of word frequencies in our traini
 \subsection{Long Short Term Memory (LSTM)}
 The first reflex that we had when handling text data is to use recurrent neural networks. LSTM is one of the most used types of language models.
 
-In this first work, we are using batch mode with the following architecture:
+In this first work, we used batch mode. To be able to train LSTM model, we had to prepare the input matrix which has the dimensions (batch size X sequence length X embeddings length), where:
+
+\begin{itemize}
+	\item Batch size = number of tweets in trainset,
+	\item Sequence length = length of the longest tweet,
+	\item Embedding length : size of embeddings fixed to 100.
+\end{itemize}
+
+Words embeddings are calculated using $word2vec$ model trained on out training set.
+
+
+The architecture of our model is as following:
 \begin{itemize}
 	\item Number of layers: 1,
 	\item Number of hidden units: 150,
