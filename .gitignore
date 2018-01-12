@@ -7,3 +7,6 @@
 !*.pdf
 !data/
 !data/*
+!report/report.pdf
+!report/report.tex
+!report/images
