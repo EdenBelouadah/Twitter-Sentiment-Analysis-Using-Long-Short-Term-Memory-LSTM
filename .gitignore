@@ -9,5 +9,6 @@
 !data/*
 !report/report.pdf
 !report/report.tex
-!report/images
+!report/images/
+!report/images/*
 !report
