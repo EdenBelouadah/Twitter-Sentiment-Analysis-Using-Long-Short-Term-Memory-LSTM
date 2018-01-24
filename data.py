@@ -5,30 +5,30 @@ import numpy as np
 import re
 import gensim
 
-
+#loading data
 def load_B_task_dataset(file_path):
     assert isinstance(file_path, str)  # Type check
     messages, polarities = [], []
     with open(file_path) as dataset_file:
-        for instance in csv.reader(dataset_file, delimiter='\t'):
+        for instance in csv.reader(dataset_file, delimiter='\t'): #read the dataset as CSV file
             context, message, polarity = instance[-3], instance[-1], instance[-2]
             messages.append(message)
-            if polarity == 'negative':
+            if polarity == 'negative': #negative polarities are replaced with 0
                 polarities.append(0)
-            elif polarity == 'positive':
+            elif polarity == 'positive': #positive polarities are replaced with 2
                 polarities.append(2)
-            else:
-                polarities.append(1)
+            else: #neutral polarities are replaced with 1
+                polarities.append(1) 
     return messages, polarities
 
 
-def clean_digit(token):
+def clean_digit(token): #check whether there is no digit
     if re.search(r'.*\d.*', token): #whatever_digit_whatever
         return False
     return True
 
 
-def clean_url(token):
+def clean_url(token): #check whether there is not an URL
     if re.search(r'\w+\.\w+', token): #word.word
         return False
     if not (token.startswith("http") or token.startswith("www")):
@@ -36,7 +36,7 @@ def clean_url(token):
     return False
 
 
-def clean_punc(token):
+def clean_punc(token): #check whether there is no punctuation
     punc = [".", ";", "!", ":", "(", ")", "[", "]", "?", ",", "&", "-", "$", "~", "#", "{", "}", "/", "\\", '\'', '\"', '<', '>', '`', "+", "|", "^","@","%","=","*"]
     if token in punc:
         return False
@@ -57,19 +57,12 @@ def clean_punc(token):
     return True
 
 
-def clean_tag(token):
+def clean_tag(token): #check whether there is no tag
     if re.search(r'@\w+', token): #@person , Emails
         return False
     return True
 
-
-# def clean_hashtag(token):
-#     if token.startswith("#"):
-#         token=token[1:]
-#     return token
-
-
-def get_hashtag_parts(token):
+def get_hashtag_parts(token): #tokenize every hashtag whenever it is possible
     if token.startswith("#"):
         hashtag = token[1:]
         if hashtag.isupper():
@@ -83,7 +76,7 @@ def get_hashtag_parts(token):
                 if(part != ""):
                     hashtag_parts.append(part)
                 part = ""+c
-        if (part != ""):
+        if part != "":
             hashtag_parts.append(part)
         return hashtag_parts
     return [token]
@@ -120,7 +113,7 @@ def generate_vocabulary(processed_messages):  # For processed messages, each mes
         vocabulary.update(message)
     return vocabulary
 
-
+#replace every word by its index
 def get_indices(vocabulary):
     assert isinstance(vocabulary, set)
     words_indices = {}
@@ -131,27 +124,19 @@ def get_indices(vocabulary):
     return words_indices
 
 
-def transform_to_indices(processed_messages, words_indices):
+def transform_to_indices(processed_messages, words_indices): #transform messages of tokens to messages of indices.
     assert isinstance(processed_messages, list) and all(isinstance(msg, list) for msg in processed_messages)
     assert isinstance(words_indices, dict) and all(isinstance(v, int) for v in words_indices.values())  # Type check
     return [[words_indices[w] for w in msg] for msg in processed_messages]
 
 
-def create_vocabulary_embeddings(vocabulary, p_messages):
-    embedding_size = 100
-    oov = "<<<<<<<OOV>>>>>>>"
-    vocabulary.add(oov)
-    messages = [msg for msg in p_messages]
-    messages.append([oov])
-    model = gensim.models.Word2Vec(messages, min_count = 1, size = embedding_size)
+def create_vocabulary_embeddings(vocabulary, p_messages, embedding_size = 100): #generate the embeddings values
+    model = gensim.models.Word2Vec(p_messages, min_count = 1, size = embedding_size) #use word2vec
     i=0
     vocabulary_embeddings = []
     embeddings_indices = {}
     for word in vocabulary:
-        try:
-            embedding = model[word]
-        except:
-            embedding = model[oov]
+        embedding = model[word]
         vocabulary_embeddings.append(embedding)
         embeddings_indices[word] = i
         i += 1

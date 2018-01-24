@@ -124,7 +124,7 @@ In this project, we aim to compare and analyze the performance of several deep a
 In this intermediate report, we will present the data in hand as well as some statistics to describe it, then we will give a brief description of the models tested so far and finally present the preliminary results. 
 
 \section{Presenting the data}
-For this project, we used the B-task SemEval-2013 training and development data, which have the following characteristics before any preprocessing:
+For this project, we used the B-task SemEval-2013 [1] training and test data, which have the following characteristics before any preprocessing:
 
 \begin{table}[H]\centering
 \begin{tabular}{|c|c|c|c|c|}
@@ -134,11 +134,11 @@ Set & Number of examples & Positive & Negative & Neutral\\
 \hline
 Train & 5916 & 2179 & 816 & 2921\\
 \hline
-Development & 876 & 324 & 158 & 394\\
+Test & 876 & 324 & 158 & 394\\
 \hline
 
 \end{tabular}
-\caption{Classes distribution for trainset and devset}
+\caption{Classes distribution for train set and test set}
 \end{table}
 
 If we visualize an extract (the first 5 for example) of the tweets in the training set, we get the text shown in figure \ref{extract}.
@@ -150,20 +150,20 @@ If we visualize an extract (the first 5 for example) of the tweets in the traini
 \label{extract}
 \end{figure}
 
-We noticed that, in addition to words, messages contain hashtags, URLs and user tags, which are less likely to be useful for sentiment prediction. 
+We noticed that, in addition to words, tweets contain hashtags, URLs and user tags, which are less likely to be useful for sentiment prediction. 
 
 We also computed some statistics for the tweets, which we summarize in table \ref{stat}.
 
 
 \begin{table}[H]\centering
 	\begin{tabular}{|c|c c c|c c c|c c c|}
-		\hline \textbf{Type}  & \multicolumn{3}{|c|}{\textbf{Positive messages}} & \multicolumn{3}{|c|}{\textbf{Negative messages}} & \multicolumn{3}{|c|}{\textbf{Neutral messages}}\\    \hline
+		\hline \textbf{Type}  & \multicolumn{3}{|c|}{\textbf{Positive tweets}} & \multicolumn{3}{|c|}{\textbf{Negative tweets}} & \multicolumn{3}{|c|}{\textbf{Neutral tweets}}\\    \hline
 		 Length & Min & Max & Mean & Min & Max & Mean & Min & Max & Mean\\   \hline
 		\textbf{Train} & 4&44&23&6&38&23&5&40&23 \\
-		\textbf{Dev} & 7&35&23&8&34&23&6&38&22 \\
+		\textbf{Test} & 7&35&23&8&34&23&6&38&22 \\
 		\hline
 	\end{tabular}
-	\caption{Statstics about messages length for trainset and devset before data preprocessing}
+	\caption{Statstics about tweets length for train set and test set before data preprocessing}
 	\label{stat}
 \end{table}
 
@@ -171,11 +171,11 @@ We also computed some statistics for the tweets, which we summarize in table \re
 \section{Data Preprocessing}
 Since we cannot use the "dirty" raw text tweets for classification, we did some preprocessing as following:
 \begin{itemize}
-	\item Tokening messages using \emph{NLTK Tweet Tokenizer} which is more appropriate for this type of messages,
-	\item Using regular expressions to remove digits (24, 12.400\$...), punctuations (?,:,;,",\#, @...), tags (@user) and every sequence of special characters. Howerver, the emoticons are kept,
+	\item Tokening tweets using \emph{NLTK Tweet Tokenizer} which is more appropriate for this type of texts,
+	\item Using regular expressions to remove digits (24, 12.400\$...), punctuations (?,:,;,",\#, @...), tags (@user) and every sequence of special characters. However, the emoticons are kept,
 	\item Using \emph{NLTK Stop words} to remove all useless words,
 	\item Preprocessing Hashtags: removing \# and separating the hashtag parts (\#VeryHappy -> Very + Happy)
-	\item Transform all messages to lower case. 
+	\item Transform all tweets to lower case. 
 \end{itemize}
 
 These operations left us with a training vocabulary of size 17284, where preprocessed tweets now have the following statistics:
@@ -183,16 +183,13 @@ These operations left us with a training vocabulary of size 17284, where preproc
 
 \begin{table}[H]\centering
 	\begin{tabular}{|c|c c c|c c c|c c c|}
-		\hline \textbf{Type}  & \multicolumn{3}{|c|}{\textbf{Positive messages}} & \multicolumn{3}{|c|}{\textbf{Negative messages}} & \multicolumn{3}{|c|}{\textbf{Neutral messages}}\\    \hline
+		\hline \textbf{Type}  & \multicolumn{3}{|c|}{\textbf{Positive tweets}} & \multicolumn{3}{|c|}{\textbf{Negative tweets}} & \multicolumn{3}{|c|}{\textbf{Neutral tweets}}\\    \hline
 		Length & Min & Max & Mean & Min & Max & Mean & Min & Max & Mean\\   \hline
 		\textbf{Train} & 3&22&12&3&20&13&3&22&12 \\
 		\hline
 	\end{tabular}
-	\caption{Statstics about messages length for trainset and devset after data preprocessing}
+	\caption{Statistics about tweets length for train set and test set after data preprocessing}
 \end{table}
-
-
-As we notice, tweets have different lengths. To handle this, we take the size of the longest message and use it as a reference. The tweets having the same number of words are kept as they are, and shorter ones are replicated until their size become equal to that of the longest tweet.
 
 
 In figure \ref{freq}, we show the distribution of word frequencies in our training set. 
@@ -204,67 +201,111 @@ In figure \ref{freq}, we show the distribution of word frequencies in our traini
 \label{freq}
 \end{figure}
 
-\section{Models and results}
-\subsection{Long Short Term Memory (LSTM)}
-The first reflex that we had when handling text data is to use recurrent neural networks. LSTM is one of the most used types of language models.
-
-In this first work, we used batch mode. To be able to train LSTM model, we had to prepare the input matrix which has the dimensions (batch size X sequence length X embeddings length), where:
-
-\begin{itemize}
-	\item Batch size = number of tweets in trainset,
-	\item Sequence length = length of the longest tweet,
-	\item Embedding length : size of embeddings fixed to 100.
-\end{itemize}
-
-Words embeddings are calculated using $word2vec$ model trained on out training set.
-
-
-The architecture of our model is as following:
-\begin{itemize}
-	\item Number of layers: 1,
-	\item Number of hidden units: 150,
-	\item Knowing that we have three classes in our classification problem, the LSTM layer is connected to a linear layer of size (number of hidden units X3).
-	\item Optimizer: We used Adam optimizer instead of smple SGD since the latter is less robust against local optima.
-	\item Loss: We used the Cross Entropy Loss. 
-\end{itemize}
-
-After peforming forward propagation, we backward the error and update the parameters of the model.
-
-The program shows real time plots for accuracy and the Cross Entropy Loss.
-
-\begin{figure}[H]
-\centering
-\includegraphics[scale=0.85]{acc_loss}
-\caption{Accuracy and Loss evolution for LSTM baseline}
-\end{figure}
-
-Unfortunately, The maximum of accuracy that our model reached is 52\%. We think about changing again the architecture of the model, probably change the data preprocessing and why not add dropout techniques.
-
+\section{Building models}
 \subsection{Multi-Layer Perceptron (MLP)}
-We also wanted to test the performance of the MLP classifier if we train it on a word embedding-based representation of our tweets. 
+We tried to start with a simple model like MLP classifier, so we trained it on a word embedding-based representation of our tweets. 
 
-For that we used the Word2Vec embeddings for our Vocabulary and represented each tweet by the sum of the embeddings of its constituents. That is, if a tweet is "Happy New Year", the value of this observation would be the some of the embeddings of "Happy", "New" and "Year". And we do this for all the elements in the training set. Thus, using an embedding dimension of 100, the shape of our training set now becomes (5916, 100).
+For that we used the Word2Vec embeddings for our Vocabulary and represented each tweet by the sum of the embeddings of its constituents. That is, if a tweet is "Happy New Year", the value of this observation would be the sum of the embeddings of "Happy", "New" and "Year". And we do this for all the elements in the training set. Thus, using an embedding dimension of 100, the shape of our training set now becomes (number of tweets, 100).
 
-We then train the MLP classifier with one hidden layer of size 100 neurons, using stratified 10-fold cross-validation. We obtain the following results: 
+We then trained the MLP classifier with one hidden layer of size 100 neurons, using stratified 10-fold cross-validation. We obtained the following results: 
 
 
 \begin{table}[H]\centering
-	\begin{tabular}{ccccccccccc}
+	\begin{tabular}{cccccccccccc}
 		\toprule
-		\textbf{Fold} & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 \\    \midrule
-		\textbf{Accuracy} & 0.513 & 0.540 & 0.513 & 0.522 & 0.5 & 0.530 & 0.521 & 0.496 & 0.487 & 0.493  \\   
+		\textbf{Fold} & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & \textbf{Mean} \\    \midrule
+		\textbf{Accuracy} & 0.513 & 0.540 & 0.513 & 0.522 & 0.5 & 0.530 & 0.521 & 0.496 & 0.487 & 0.493& \textbf{0.51}  \\   
 		\bottomrule	
 	\end{tabular}
 	\caption{Accuracy obtained for each fold}
 \end{table}
 
-The mean accuracy is 0.51. 
+As we can see, the MLP performance is slightly better than a random classifier which would give us an accuracy of 33\% but it's not satisfying for our problem. 
 
-As we can see, the MLP performance is slightly better than a random classifier which would give us an accuracy of 33\%. However, we can still optimize the model and/or the data representation. Deeper thoughts would be developped in our final report. 
+\subsection{Long Short Term Memory (LSTM)}
+Since the MLP classifier didn't give any good results, we decided to use recurrent neural networks which are models specialized in sequential data like the natural text in which the position of the words plays a significant role in the meaning. More precisely, we have chosen LSTM which is a robust model of the RNNs that can keep record of the long term and the short term dependencies between the parts of the data.
+
+A common LSTM unit is composed of a cell, an input gate, an output gate and a forget gate. The cell is responsible for learning long-term dependencies through arbitrary time intervals; this allows LSTM model to handle the exploding and vanishing gradient problems that traditional RNNs suffer from. 
+
+\subsubsection{Data matrix}
+
+In order to train LSTM model, an input matrix must be constructed with 3 dimensions: batch size $\times$ sequence length $\times$ embeddings length, where :
+
+\begin{itemize}
+	\item Batch size = number of tweets,
+	\item Sequence length = length of the longest tweet (in the train set),
+	\item Embedding length : size of embeddings fixed at 100.
+\end{itemize}
+
+As we notice, tweets have different lengths. To handle this, we take the size of the longest one and use it as a reference. The tweets having the same number of words are kept as they are, and the shorter ones are duplicated until their sizes reach that of the longest tweet.
+
+Words embeddings are calculated using $word2vec$ model which has been trained on the training set. Words from test set that don't exist in training set are replaced with the <unknown> word.
+
+\subsubsection{Model architecture}
+The architecture of our model is as following:
+\begin{itemize}
+	\item \textbf{LSTM layer} with a hidden state size of 200. The output of this layer is a 3 dimensional matrix in which the first 2 dimensions are as always the \emph{batch size} and the \emph{sequence length}, but the last one will be hidden state size, which is equal, in our case, to 200.
+	\item \textbf{Dropout layer} with a probability of dropping equals to $0.2$ (20\% of the output of the LSTM layer is zeroed at random locations in each training iteration).
+	\item \textbf{Fully connected layer} having 2 dimensions, the first one is sequence length $\times$ LSTM hidden size, and this is caused by the output of the LSTM layer which is 3 dimensional while the input of the Dropout layer is only 2 dimensional, so the last 2 dimensions of the first layer's output are flattened into a single dimension.
+\end{itemize}
+
+The optimizer used for training is \textbf{Adam}. It has been chosen instead of the simple \emph{Stochastic Gradient Descent (SGD)} since it is robust against local optima.
+
+The loss function used is the \textbf{Cross Entropy Loss}, because we are dealing with a classification problem.
+
+After performing the forward propagation, we backward the error gradient and update the parameters of the model. The network's memory is emptied after each iteration. The dropout layer is used as a regularization trick because it has a big impact on the model's performance. More details will be discussed later. 
+
+\subsubsection{Implementation and Results}
+We used \textbf{PyTorch} to implement our LSTM model. The program shows real-time plots for accuracy and the Cross Entropy Loss for both train and test sets.
+
+The next figure shows the plots for the whole training process:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{acc_loss}
+\caption{Evolution of Accuracy and Cross Entropy Loss through the whole training process (Blue: Train, Green: Test)}
+\end{figure}
+
+The program also allow interrupting the training process (if under/over-fitting are observed for example or if the training process takes too long) and then saves the model's learned parameters in a file so that it will be possible to continue the learning process from where it was stopped last time.
+
+The results of training the LSTM model after 2941 epochs (running it for 9 hours on Intel Core i5 processor) are the following:
+
+\begin{table}[H]\centering
+	\begin{tabular}{cccccccccccc}
+		\toprule
+		\textbf{Set} & Train & Test \\    \midrule
+		\textbf{Accuracy} & 86.76\% & 87.54\% \\   
+		\textbf{Cross Entropy Loss} & 0.3094 & 0.2975\\
+		\bottomrule	
+	\end{tabular}
+	\caption{Accuracy and Cross Entropy Loss obtained with LSTM }
+\end{table}
 
 
+\paragraph{Why dropout layer is so important ?}
+Before adding the dropout layer, the model was over-fitting the data, and the error on test set was diverging from that of training set since the first iterations ! Thus, the model was performing very well on the training data while it was very bad on the test data.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=1]{overfitting}
+	\caption{Cross Entropy Loss before adding dropout}
+\end{figure}
+
+\subsubsection{Discussion of results}
+Comparing our LSTM model with the work done by Ye Yuan, You Zhou in [2], we find that their One-hidden-layer RNN has reached only \textbf{63.71\%} of accuracy on the same dataset that we used. Therefore, our LSTM model is clearly better.
+
+We also tried the mini-batch mode but the program was very slow compared to batch mode. The latter gave us satisfying results so we decided to use it in the final version of the program.
 
 \section{Conclusion}
-In this intermediate report we showed data preprocessing and our baseline results. In addition to making the models give a higher accuracy and a lower prediction error, we aim at analysing the behaviour of each of the models tested for the different representations of the training data to come up with an insight regarding the specificities of this particular classification task. 
+In this work, we compared the performance of two neural networks: MLP and LSTM classifiers. The performance of the latter was better on tweets classification task. Therefore, LSTM is more suitable for sentiment analysis from the text thanks to its long-term memory that is not available in general models like MLP.
+
+In addition, we found that many factors can control the efficiency of our model, especially data preprocessing quality, regularization and network architecture.
+
+Text classification remains a large field of research and the subject of many real-world problems.
+
+\section{References}
+[1] Semeval 2013 Task 2 Data. http://www.cs.york.ac.uk/semeval-2013/task2/. Retrieved on January 4th 2018.
+
+[2] Yuan, Y. and Zhou, Y., 2015. Twitter Sentiment Analysis with Recursive Neural Networks. CS224D Course Projects.
 
 \end{document}
